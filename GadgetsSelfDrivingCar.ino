@@ -10,7 +10,9 @@
 //Do not operate front except at SPEED_1
 //Rear motor can be operated at other speeds sparingly as motor failure can occur
 #define SPEED_2 170 //Approx. 6V to motors
-#define TURBO 255 //Approx. 9V to motors 
+#define TURBO 255 //Approx. 9V to motors
+#define TURN_THRESHOLD 90 //
+ 
 
 // --------------------------------------------------------------------------- Motors
 Adafruit_MotorShield AFMS = Adafruit_MotorShield();
@@ -19,7 +21,7 @@ Adafruit_DCMotor *rearMotor = AFMS.getMotor(2);
 
 // --------------------------------------------------------------------------- Sensors
 NewPing front(5,4,MAX_DISTANCE);
-NewPing left(7,6,MAX_DISTANCE);
+NewPing left(13,12,MAX_DISTANCE);
 NewPing right(9,8,MAX_DISTANCE);
 
 // --------------------------------------------------------------------------- Setup
@@ -28,26 +30,33 @@ void setup() {
 	AFMS.begin();
 	frontMotor->setSpeed(SPEED_1);//Do not alter frontMotor speed
 	rearMotor->setSpeed(SPEED_1);//Operate above SPEED_1 sparingly
+  Serial.begin(9600);
 }
 
 // --------------------------------------------------------------------------- Loop
 void loop() { 
 	//Debugging Code
-	drive_forward();
-    delay(1000);
-	motor_stop();
-
-	drive_backward();
-	delay(1000);
-	motor_stop();
-
-	turn_left();
-	delay(1000);
-	turn_center();
-
-	turn_right();
-	delay(1000);
-	turn_center();
+  //int front_dist = front.ping_cm();
+//  int left_dist = left.ping_cm();
+  int right_dist = right.ping_cm();
+  
+//  Serial.print(left_dist);
+  Serial.print(" ");
+//  Serial.print(front_dist);
+  Serial.print(" ");
+  Serial.print(right_dist);
+  Serial.print("\n");
+//  if( front_dist == 0 || front_dist < TURN_THRESHOLD) {
+//    turn_center();
+//    drive_forward();
+//  }
+//  else if(left_dist > right_dist){
+//    turn_left();
+//  }
+//  else {
+//    turn_right();
+//  }
+  
 	//!Debugging Code
 }
 
