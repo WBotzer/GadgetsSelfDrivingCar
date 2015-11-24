@@ -3,6 +3,7 @@
 #include <Wire.h>
 #include "utility/Adafruit_PWMServoDriver.h"
 #include <NewPing.h>
+//#include <PrintEx.h>
 
 // --------------------------------------------------------------------------- Constants
 #define MAX_DISTANCE 300 //centimeters range 2 - 400
@@ -42,12 +43,14 @@ NewPing right(13,12,MAX_DISTANCE);
 NewPing left(9,8,MAX_DISTANCE);
 
 // --------------------------------------------------------------------------- Setup
+//StreamEx mySerial = Serial;//Debugging
+
 void setup() {
 	// Setup motors
 	AFMS.begin();
 	frontMotor->setSpeed(SPEED_1);//Do not alter frontMotor speed
 	rearMotor->setSpeed(SPEED_1);//Operate above SPEED_1 sparingly
-  Serial.begin(9600);
+  Serial.begin(9600);//For Debugging
 }
 
 // --------------------------------------------------------------------------- Loop
