@@ -135,6 +135,7 @@ void loop() {
 		default:
 			motor_stop();
 			turn_center();
+			MOVEMENT=false;
 	}
 }
 
