@@ -12,8 +12,8 @@
 #define SPEED_2 170 //Approx. 6V to motors
 #define TURBO 255 //Approx. 9V to motors
 #define TURN_THRESHOLD 95 //In cm
-#define TURN_MINIMUM 40 //in cm
-#define PING_ITERATIONS 5 //Count
+#define TURN_MINIMUM 40 //In cm
+#define PING_ITERATIONS 5 //Number of pings for average
 //For switch cases in loop()
 #define Forward 0
 #define Turn 1
@@ -43,13 +43,11 @@ NewPing right(13,12,MAX_DISTANCE);
 NewPing left(9,8,MAX_DISTANCE);
 
 // --------------------------------------------------------------------------- Setup
-
 void setup() {
 	// Setup motors
 	AFMS.begin();
 	frontMotor->setSpeed(SPEED_1);//Do not alter frontMotor speed
 	rearMotor->setSpeed(SPEED_1);//Operate above SPEED_1 sparingly
-  Serial.begin(9600);//For Debugging
 }
 
 // --------------------------------------------------------------------------- Loop
@@ -128,9 +126,6 @@ void loop() {
 			if (front_dist > TURN_THRESHOLD || !MOVEMENT)
 				state = Forward;  
 			break;
-			
-		case Reverse:
-			break;
       
 		default:
 			motor_stop();
@@ -139,21 +134,7 @@ void loop() {
 	}
 }
 
-//Methods for NewPing objects
-//sonar.ping(); - Send a ping, returns the echo time in microseconds or 0 (zero) if no ping echo within set distance limit
-//sonar.ping_in(); - Send a ping, returns the distance in inches or 0 (zero) if no ping echo within set distance limit
-//sonar.ping_cm(); - Send a ping, returns the distance in centimeters or 0 (zero) if no ping echo within set distance limit
-//sonar.ping_median(iterations); - Do multiple pings (default=5), discard out of range pings and return median in microseconds
-//sonar.convert_in(echoTime); - Converts microseconds to distance in inches
-//sonar.convert_cm(echoTime); - Converts microseconds to distance in centimeters
-//sonar.ping_timer(function); - Send a ping and call function to test if ping is complete.
-//sonar.check_timer(); - Check if ping has returned within the set distance limit.
-//timer_us(frequency, function); - Call function every frequency microseconds.
-//timer_ms(frequency, function); - Call function every frequency milliseconds.
-//timer_stop(); - Stop the timer.
-
 // --------------------------------------------------------------------------- Drive
-
 void motor_stop(){//Stops drive motor
 	rearMotor->run(RELEASE);
 	delay(25);
