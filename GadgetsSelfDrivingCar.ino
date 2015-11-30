@@ -27,9 +27,10 @@
 // --------------------------------------------------------------------------- Variables
 int state = Forward;
 bool MOVEMENT = false;
+int count = 100;
 int left_dist;
 int previous_front = 0;
-int front_dist;
+int front_dist = 0;
 int right_dist;	
 
 // --------------------------------------------------------------------------- Motors
@@ -48,30 +49,34 @@ void setup() {
 	AFMS.begin();
 	frontMotor->setSpeed(SPEED_1);//Do not alter frontMotor speed
 	rearMotor->setSpeed(SPEED_1);//Operate above SPEED_1 sparingly
+  Serial.begin(9600);
 }
 
 // --------------------------------------------------------------------------- Loop
 void loop() {
 
-	left_dist = left.convert_cm(left.ping_median(PING_ITERATIONS));
-	if (left_dist == 0)
+  //ECC
+	left_dist = left.ping_cm();
+	if (left_dist == 0){
 		left_dist = 999;
-	
-	right_dist = right.convert_cm(right.ping_median(PING_ITERATIONS));
-	if (right_dist == 0)
+	}
+	right_dist = right.ping_cm();
+	if (right_dist == 0){
 		right_dist = 999;
-
-	front_dist = front.convert_cm(front.ping_median(PING_ITERATIONS));
-	if (front_dist == 0)
+	}
+	
+	front_dist = front.ping_cm();
+  if (abs(previous_front - front_dist) > 3) {
+    count = 100;
+  }
+  else
+    count --;
+  previous_front = front_dist;
+	if (front_dist == 0){
 		front_dist = 999;
-
-  
-	if (previous_front != front_dist)
-		MOVEMENT = true;
-	else
-		MOVEMENT = false;
-    
-	previous_front = front_dist;
+	}
+ Serial.println(count);
+  //!ECC
   
 	switch (state) {
 		case Forward:
@@ -79,8 +84,10 @@ void loop() {
 			drive_forward();
 			if(front_dist < TURN_THRESHOLD && front_dist > TURN_MINIMUM)
 				state = Turn;
-			else if(front_dist < TURN_MINIMUM)
+			else if(front_dist < TURN_MINIMUM || count <= 0){
+				count = 100;
 				state = Reverse;
+			}
 			break;
       
 		case Turn:
@@ -95,7 +102,7 @@ void loop() {
 			if(front_dist > TURN_THRESHOLD)
 				state = Forward;
 			else if (front_dist < TURN_MINIMUM)
-				state = Reverse_right;
+				state = Reverse;
 			break;
       
 		case Turn_right:
@@ -103,11 +110,11 @@ void loop() {
 			if(front_dist > TURN_THRESHOLD)
 				state = Forward;
 			else if (front_dist < TURN_MINIMUM)
-				state = Reverse_left;
+				state = Reverse;
 			break;
       
 		case Reverse:
-			if(left_dist > right_dist)
+			if(left_dist < right_dist)
 				state = Reverse_right;
 			else
 				state = Reverse_left;
@@ -116,21 +123,21 @@ void loop() {
 		case Reverse_right:
 			turn_left();
 			drive_backward();
-			if (front_dist > TURN_THRESHOLD || !MOVEMENT)
+			if (front_dist > TURN_THRESHOLD)
 				state = Forward;        
 			break;
       
 		case Reverse_left:
 			turn_right();
 			drive_backward();
-			if (front_dist > TURN_THRESHOLD || !MOVEMENT)
+			if (front_dist > TURN_THRESHOLD)
 				state = Forward;  
 			break;
       
 		default:
 			motor_stop();
 			turn_center();
-			MOVEMENT=false;
+			count=0;
 	}
 }
 
