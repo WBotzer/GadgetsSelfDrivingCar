@@ -14,6 +14,7 @@
 #define TURN_THRESHOLD 95 //In cm
 #define TURN_MINIMUM 40 //In cm
 #define PING_ITERATIONS 5 //Number of pings for average
+#define DELAY 100 //No movement detected for x cycles
 //For switch cases in loop()
 #define Forward 0
 #define Turn 1
@@ -26,12 +27,11 @@
 
 // --------------------------------------------------------------------------- Variables
 int state = Forward;
-bool MOVEMENT = false;
-int count = 100;
-int left_dist;
+int count = DELAY;
+int left_dist = 0;
 int previous_front = 0;
 int front_dist = 0;
-int right_dist;	
+int right_dist = 0;	
 
 // --------------------------------------------------------------------------- Motors
 Adafruit_MotorShield AFMS = Adafruit_MotorShield();
@@ -49,34 +49,35 @@ void setup() {
 	AFMS.begin();
 	frontMotor->setSpeed(SPEED_1);//Do not alter frontMotor speed
 	rearMotor->setSpeed(SPEED_1);//Operate above SPEED_1 sparingly
-  Serial.begin(9600);
 }
 
 // --------------------------------------------------------------------------- Loop
 void loop() {
 
-  //ECC
+	//ECC
 	left_dist = left.ping_cm();
 	if (left_dist == 0){
 		left_dist = 999;
 	}
+
 	right_dist = right.ping_cm();
 	if (right_dist == 0){
 		right_dist = 999;
 	}
-	
+
 	front_dist = front.ping_cm();
-  if (abs(previous_front - front_dist) > 3) {
-    count = 100;
-  }
-  else
-    count --;
-  previous_front = front_dist;
+	if (abs(previous_front - front_dist) > 3) {
+		count = DELAY;
+	}
+	else
+		count --;
+
+	previous_front = front_dist;
+
 	if (front_dist == 0){
 		front_dist = 999;
 	}
- Serial.println(count);
-  //!ECC
+	//!ECC
   
 	switch (state) {
 		case Forward:
@@ -85,7 +86,7 @@ void loop() {
 			if(front_dist < TURN_THRESHOLD && front_dist > TURN_MINIMUM)
 				state = Turn;
 			else if(front_dist < TURN_MINIMUM || count <= 0){
-				count = 100;
+				count = DELAY;
 				state = Reverse;
 			}
 			break;
