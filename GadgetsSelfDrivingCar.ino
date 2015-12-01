@@ -31,7 +31,8 @@ int count = DELAY;
 int left_dist = 0;
 int previous_front = 0;
 int front_dist = 0;
-int right_dist = 0;	
+int right_dist = 0;
+int temp = 0;	
 
 // --------------------------------------------------------------------------- Motors
 Adafruit_MotorShield AFMS = Adafruit_MotorShield();
@@ -64,9 +65,9 @@ void loop() {
 	if (right_dist == 0){
 		right_dist = 999;
 	}
-
 	front_dist = front.ping_cm();
-	if (abs(previous_front - front_dist) > 3) {
+	temp = front_dist;
+	if (abs(previous_front - temp) > 3) {
 		count = DELAY;
 	}
 	else
