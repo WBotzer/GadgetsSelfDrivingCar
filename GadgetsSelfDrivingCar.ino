@@ -15,6 +15,7 @@
 #define TURN_MINIMUM 40 //In cm
 #define PING_ITERATIONS 5 //Number of pings for average
 #define DELAY 100 //No movement detected for x cycles
+#define SLOWDOWN .85
 //For switch cases in loop()
 #define Forward 0
 #define Turn 1
@@ -28,11 +29,12 @@
 // --------------------------------------------------------------------------- Variables
 int state = Forward;
 int count = DELAY;
-int left_dist = 0;
+int previous_left = 0;
+int previous_right = 0;
 int previous_front = 0;
 int front_dist = 0;
 int right_dist = 0;
-int temp = 0;	
+int left_dist = 0;
 
 // --------------------------------------------------------------------------- Motors
 Adafruit_MotorShield AFMS = Adafruit_MotorShield();
@@ -46,126 +48,131 @@ NewPing left(9,8,MAX_DISTANCE);
 
 // --------------------------------------------------------------------------- Setup
 void setup() {
-	// Setup motors
-	AFMS.begin();
-	frontMotor->setSpeed(SPEED_1);//Do not alter frontMotor speed
-	rearMotor->setSpeed(SPEED_1);//Operate above SPEED_1 sparingly
+  // Setup motors
+  AFMS.begin();
+  frontMotor->setSpeed(SPEED_1);//Do not alter frontMotor speed
+  rearMotor->setSpeed(SPEED_1);//Operate above SPEED_1 sparingly
 }
 
 // --------------------------------------------------------------------------- Loop
 void loop() {
 
-	//ECC
-	left_dist = left.ping_cm();
-	if (left_dist == 0){
-		left_dist = 999;
-	}
+  //ECC
+  left_dist = left.ping_cm();
+  right_dist = right.ping_cm();
+  front_dist = front.ping_cm();
 
-	right_dist = right.ping_cm();
-	if (right_dist == 0){
-		right_dist = 999;
-	}
-	front_dist = front.ping_cm();
-	temp = front_dist;
-	if (abs(previous_front - temp) > 3) {
-		count = DELAY;
-	}
-	else
-		count --;
-
-	previous_front = front_dist;
-
-	if (front_dist == 0){
-		front_dist = 999;
-	}
-	//!ECC
+  if(abs(previous_front - front_dist) > 3 || abs(previous_right - right_dist) < 3 && abs(previous_left-left_dist) < 3){
+    count = DELAY;
+    previous_front = front_dist;
+    previous_right = right_dist;
+    previous_left = left_dist;
+  }
+  else
+    count--;
+    
+  if (right_dist == 0){
+    right_dist = 999;
+  }
+  if (front_dist == 0){
+    front_dist = 999;
+  }
+    if (left_dist == 0){
+    left_dist = 999;
+  }
+  //!ECC
   
-	switch (state) {
-		case Forward:
-			turn_center();
-			drive_forward();
-			if(front_dist < TURN_THRESHOLD && front_dist > TURN_MINIMUM)
-				state = Turn;
-			else if(front_dist < TURN_MINIMUM || count <= 0){
-				count = DELAY;
-				state = Reverse;
-			}
-			break;
+  switch (state) {
+    case Forward:
+      turn_center();
+      drive_forward();
+      if(front_dist < 400)
+        rearMotor->setSpeed(SPEED_1 * SLOWDOWN);
+      else 
+        rearMotor->setSpeed(SPEED_1);
+      if(front_dist < TURN_THRESHOLD && front_dist > TURN_MINIMUM)
+        state = Turn;
+      else if(front_dist < TURN_MINIMUM || count <= 0){
+        count = DELAY;
+        state = Reverse;
+      }
+      break;
       
-		case Turn:
-			if(left_dist > right_dist)
-				state = Turn_left;
-			else
-				state = Turn_right;
-			break;
+    case Turn:
+      if(left_dist > right_dist)
+        state = Turn_left;
+      else
+        state = Turn_right;
+      break;
       
-		case Turn_left:
-			turn_left();
-			if(front_dist > TURN_THRESHOLD)
-				state = Forward;
-			else if (front_dist < TURN_MINIMUM)
-				state = Reverse;
-			break;
+    case Turn_left:
+      turn_left();
+      if(front_dist > TURN_THRESHOLD)
+        state = Forward;
+      else if (front_dist < TURN_MINIMUM)
+        state = Reverse;
+      break;
       
-		case Turn_right:
-			turn_right();
-			if(front_dist > TURN_THRESHOLD)
-				state = Forward;
-			else if (front_dist < TURN_MINIMUM)
-				state = Reverse;
-			break;
+    case Turn_right:
+      turn_right();
+      if(front_dist > TURN_THRESHOLD)
+        state = Forward;
+      else if (front_dist < TURN_MINIMUM)
+        state = Reverse;
+      break;
       
-		case Reverse:
-			if(left_dist < right_dist)
-				state = Reverse_right;
-			else
-				state = Reverse_left;
-			break;
+    case Reverse:
+      rearMotor->setSpeed(TURBO);
+      if(left_dist < right_dist)
+        state = Reverse_right;
+      else
+        state = Reverse_left;
+      break;
       
-		case Reverse_right:
-			turn_left();
-			drive_backward();
-			if (front_dist > TURN_THRESHOLD)
-				state = Forward;        
-			break;
+    case Reverse_right:
+      turn_left();
+      drive_backward();
+      if (front_dist > TURN_THRESHOLD && count > 0)
+        state = Forward;        
+      break;
       
-		case Reverse_left:
-			turn_right();
-			drive_backward();
-			if (front_dist > TURN_THRESHOLD)
-				state = Forward;  
-			break;
+    case Reverse_left:
+      turn_right();
+      drive_backward();
+      if (front_dist > TURN_THRESHOLD  && count > 0)
+        state = Forward;  
+      break;
       
-		default:
-			motor_stop();
-			turn_center();
-			count=0;
-	}
+    default:
+      motor_stop();
+      turn_center();
+      count=0;
+  }
 }
 
 // --------------------------------------------------------------------------- Drive
 void motor_stop(){//Stops drive motor
-	rearMotor->run(RELEASE);
-	delay(25);
+  rearMotor->run(RELEASE);
+  delay(25);
 }
 
 void drive_forward(){//Drive motor forward
-	rearMotor->run(FORWARD);
+  rearMotor->run(FORWARD);
 }
 
 void drive_backward(){//Drive motor backward
-	rearMotor->run(BACKWARD);
+  rearMotor->run(BACKWARD);
 }
 
 void turn_center(){//Returns steering to center
-	frontMotor->run(RELEASE);
-	delay(25);
+  frontMotor->run(RELEASE);
+  delay(25);
 }
 
 void turn_left(){//Turn left
-	frontMotor->run(FORWARD);
+  frontMotor->run(FORWARD);
 }
 
 void turn_right(){//Turn right
-	frontMotor->run(BACKWARD);
+  frontMotor->run(BACKWARD);
 }
