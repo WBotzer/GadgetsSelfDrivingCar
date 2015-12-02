@@ -6,16 +6,11 @@
 
 // --------------------------------------------------------------------------- Constants
 #define MAX_DISTANCE 300 //centimeters range 2 - 400
-#define SPEED_1 85 //Approx. 3V to motors
-//Do not operate front except at SPEED_1
-//Rear motor can be operated at other speeds sparingly as motor failure can occur
-#define SPEED_2 170 //Approx. 6V to motors
-#define TURBO 255 //Approx. 9V to motors
+#define SPEED 85 //Approx. 3V to motors at 85 range 0 - 255
+//Operate above 85 sparingly
 #define TURN_THRESHOLD 95 //In cm
 #define TURN_MINIMUM 40 //In cm
-#define PING_ITERATIONS 5 //Number of pings for average
-#define DELAY 100 //No movement detected for x cycles
-#define SLOWDOWN .85
+#define SLOWDOWN .75 //Percentage to adjust SPEED
 //For switch cases in loop()
 #define Forward 0
 #define Turn 1
@@ -24,14 +19,9 @@
 #define Reverse 4
 #define Reverse_right 5
 #define Reverse_left 6
-#define Backward 7
 
 // --------------------------------------------------------------------------- Variables
 int state = Forward;
-int count = DELAY;
-int previous_left = 0;
-int previous_right = 0;
-int previous_front = 0;
 int front_dist = 0;
 int right_dist = 0;
 int left_dist = 0;
@@ -50,8 +40,8 @@ NewPing left(9,8,MAX_DISTANCE);
 void setup() {
   // Setup motors
   AFMS.begin();
-  frontMotor->setSpeed(SPEED_1);//Do not alter frontMotor speed
-  rearMotor->setSpeed(SPEED_1);//Operate above SPEED_1 sparingly
+  frontMotor->setSpeed(SPEED);//Do not alter frontMotor speed
+  rearMotor->setSpeed(SPEED);//Operate above SPEED sparingly
 }
 
 // --------------------------------------------------------------------------- Loop
@@ -61,16 +51,7 @@ void loop() {
   left_dist = left.ping_cm();
   right_dist = right.ping_cm();
   front_dist = front.ping_cm();
-
-  if(abs(previous_front - front_dist) > 3 || abs(previous_right - right_dist) < 3 && abs(previous_left-left_dist) < 3){
-    count = DELAY;
-    previous_front = front_dist;
-    previous_right = right_dist;
-    previous_left = left_dist;
-  }
-  else
-    count--;
-    
+  
   if (right_dist == 0){
     right_dist = 999;
   }
@@ -86,14 +67,13 @@ void loop() {
     case Forward:
       turn_center();
       drive_forward();
-      if(front_dist < 400)
-        rearMotor->setSpeed(SPEED_1 * SLOWDOWN);
+      if(front_dist < MAX_DISTANCE)
+        rearMotor->setSpeed(SPEED * SLOWDOWN);
       else 
-        rearMotor->setSpeed(SPEED_1);
+        rearMotor->setSpeed(SPEED);
       if(front_dist < TURN_THRESHOLD && front_dist > TURN_MINIMUM)
         state = Turn;
-      else if(front_dist < TURN_MINIMUM || count <= 0){
-        count = DELAY;
+      else if(front_dist < TURN_MINIMUM){
         state = Reverse;
       }
       break;
@@ -122,7 +102,7 @@ void loop() {
       break;
       
     case Reverse:
-      rearMotor->setSpeed(TURBO);
+      rearMotor->setSpeed(SPEED);
       if(left_dist < right_dist)
         state = Reverse_right;
       else
@@ -132,21 +112,16 @@ void loop() {
     case Reverse_right:
       turn_left();
       drive_backward();
-      if (front_dist > TURN_THRESHOLD && count > 0)
+      if (front_dist > TURN_THRESHOLD)
         state = Forward;        
       break;
       
     case Reverse_left:
       turn_right();
       drive_backward();
-      if (front_dist > TURN_THRESHOLD  && count > 0)
+      if (front_dist > TURN_THRESHOLD)
         state = Forward;  
       break;
-      
-    default:
-      motor_stop();
-      turn_center();
-      count=0;
   }
 }
 
