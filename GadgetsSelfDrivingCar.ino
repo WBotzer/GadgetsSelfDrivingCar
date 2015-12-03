@@ -5,12 +5,12 @@
 #include <NewPing.h>
 
 // --------------------------------------------------------------------------- Constants
-#define MAX_DISTANCE 300 //centimeters range 2 - 400
+#define MAX_DISTANCE 400 //centimeters range 2 - 400
 #define SPEED 85 //Approx. 3V to motors at 85 range 0 - 255
 //Operate above 85 sparingly
-#define TURN_THRESHOLD 95 //In cm
-#define TURN_MINIMUM 40 //In cm
-#define SLOWDOWN .75 //Percentage to adjust SPEED
+#define TURN_THRESHOLD 138 //In cm
+#define TURN_MINIMUM 92 //In cm
+#define ADJ .75 //Percentage to adjust SPEED
 //For switch cases in loop()
 #define Forward 0
 #define Turn 1
@@ -58,7 +58,7 @@ void loop() {
   if (front_dist == 0){
     front_dist = 999;
   }
-    if (left_dist == 0){
+  if (left_dist == 0){
     left_dist = 999;
   }
   //!ECC
@@ -68,9 +68,9 @@ void loop() {
       turn_center();
       drive_forward();
       if(front_dist < MAX_DISTANCE)
-        rearMotor->setSpeed(SPEED * SLOWDOWN);
-      else 
         rearMotor->setSpeed(SPEED);
+      else 
+        rearMotor->setSpeed(SPEED / ADJ);
       if(front_dist < TURN_THRESHOLD && front_dist > TURN_MINIMUM)
         state = Turn;
       else if(front_dist < TURN_MINIMUM){
