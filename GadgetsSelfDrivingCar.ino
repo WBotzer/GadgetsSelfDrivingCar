@@ -8,8 +8,9 @@
 #define MAX_DISTANCE 400 //centimeters range 2 - 400
 #define SPEED 85 //Approx. 3V to motors at 85 range 0 - 255
 //Operate above 85 sparingly
-#define TURN_THRESHOLD 138 //In cm
-#define TURN_MINIMUM 92 //In cm
+#define TURN_THRESHOLD 100 //In cm
+#define TURN_MINIMUM 80 //In cm
+#define SIDE_THRESHOLD 25
 #define ADJ .75 //Percentage to adjust SPEED
 //For switch cases in loop()
 #define Forward 0
@@ -71,7 +72,7 @@ void loop() {
         rearMotor->setSpeed(SPEED);
       else 
         rearMotor->setSpeed(SPEED / ADJ);
-      if(front_dist < TURN_THRESHOLD && front_dist > TURN_MINIMUM)
+      if(front_dist < TURN_THRESHOLD && front_dist > TURN_MINIMUM || left_dist < SIDE_THRESHOLD || right_dist < SIDE_THRESHOLD)
         state = Turn;
       else if(front_dist < TURN_MINIMUM){
         state = Reverse;
@@ -87,7 +88,7 @@ void loop() {
       
     case Turn_left:
       turn_left();
-      if(front_dist > TURN_THRESHOLD)
+      if(front_dist > TURN_THRESHOLD && right_dist > SIDE_THRESHOLD)
         state = Forward;
       else if (front_dist < TURN_MINIMUM)
         state = Reverse;
@@ -95,7 +96,7 @@ void loop() {
       
     case Turn_right:
       turn_right();
-      if(front_dist > TURN_THRESHOLD)
+      if(front_dist > TURN_THRESHOLD  && left_dist > SIDE_THRESHOLD)
         state = Forward;
       else if (front_dist < TURN_MINIMUM)
         state = Reverse;
